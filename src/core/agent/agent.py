@@ -14,4 +14,10 @@ model = ChatDeepSeek(
 
 checkpointer = MemorySaver()  # 会话状态存储，示例用内存即可，生产环境换成持久化存储
 
-agent = create_agent(model, tools=[weather_tools.get_weather], checkpointer=checkpointer)
+agent = create_agent(
+    model=model, 
+    tools=[
+        weather_tools.get_weather,
+    ], 
+    checkpointer=checkpointer,
+)

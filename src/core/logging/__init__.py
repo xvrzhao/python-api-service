@@ -51,6 +51,7 @@ def setup_logging():
         "loggers": {
             "uvicorn": {"level": "INFO", "propagate": True},
             "uvicorn.access": {"level": "WARNING", "propagate": True},
+            "httpcore": {"level": "INFO", "propagate": True},
             "sqlalchemy.engine": {"level": "WARNING", "propagate": True},
         },
     }
