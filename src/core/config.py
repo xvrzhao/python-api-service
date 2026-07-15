@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     APP_NAME: str = ""
     LLM_API_KEY: SecretStr
     LLM_MODEL: str
+    LLM_CTX_WIN: int
+    LLM_CTX_WIN_THRESHOLD: float
+    LLM_CTX_WIN_SUM_KEEP: float
     ALLOW_ORIGINS: list[str] = []
 
     model_config = SettingsConfigDict(
