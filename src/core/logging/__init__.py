@@ -54,6 +54,7 @@ def setup_logging():
             "httpcore": {"level": "INFO", "propagate": True},
             "sqlalchemy.engine": {"level": "WARNING", "propagate": True},
             "openai": {"level": "INFO", "propagate": True},
+            "httpx": {"level": "WARNING", "propagate": True},
         },
     }
 

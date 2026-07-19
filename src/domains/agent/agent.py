@@ -43,23 +43,22 @@ async def _agent_event_stream(input: Any, config: dict) -> AsyncIterator[str]:
         # agent 执行完毕，判断是否有中断任务需要前端处理
         state = await agent.aget_state(config=config)
         if len(state.interrupts) > 0:
-            intrs = [intr.value for intr in state.interrupts]
+            intrs = [_classify_interrupt(intr.value) for intr in state.interrupts]
             logger.debug("agent stream done, but has interrupts: %s", intrs)
-            yield sse_event("interrupt", {"data": intrs})
+            yield sse_event("interrupt", {"items": intrs})
         else:
             yield sse_event("done", {})
-        # if state.next:
-        #     interrupts = []
-        #     for task in state.tasks:
-        #         for intr in getattr(task, "interrupts", []):
-        #             interrupts.append(intr.value)
-        #     yield sse_event("interrupt", {"data": interrupts})
-        # else:
-        #     yield sse_event("done", {})
 
     except Exception as e:
         logger.exception("agent stream error")
         yield sse_event("error", {"message": str(e)})
+
+def _classify_interrupt(value: dict) -> dict:
+    """给 interrupt 加入 type 供前端区分"""
+    if "action_requests" in value:
+        # HITL 中间件产生的 interrupt
+        value.update({"type": "tool_approval"})
+    return value
 
 @router.post("/chat/stream", summary="发送消息")
 async def chat_stream(req: ChatRequest):
