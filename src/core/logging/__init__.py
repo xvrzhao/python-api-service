@@ -53,6 +53,7 @@ def setup_logging():
             "uvicorn.access": {"level": "WARNING", "propagate": True},
             "httpcore": {"level": "INFO", "propagate": True},
             "sqlalchemy.engine": {"level": "WARNING", "propagate": True},
+            "openai": {"level": "INFO", "propagate": True},
         },
     }
 

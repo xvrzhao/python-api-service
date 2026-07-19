@@ -1,7 +1,7 @@
 from langchain_deepseek import ChatDeepSeek
 from langgraph.checkpoint.memory import MemorySaver
 from langchain.agents import create_agent
-from langchain.agents.middleware import SummarizationMiddleware
+from langchain.agents.middleware import SummarizationMiddleware, HumanInTheLoopMiddleware
 
 from src.core.config import settings
 import src.core.agent.tools.weather as weather_tools
@@ -30,6 +30,11 @@ agent = create_agent(
             trigger=("tokens", settings.LLM_CTX_WIN * settings.LLM_CTX_WIN_THRESHOLD),
             keep=("tokens", settings.LLM_CTX_WIN * settings.LLM_CTX_WIN_THRESHOLD * settings.LLM_CTX_WIN_SUM_KEEP)
         ),
+        HumanInTheLoopMiddleware(
+            interrupt_on={
+                "get_weather": {"allowed_decisions": ["approve", "reject"]}
+            }
+        )
     ],
     checkpointer=checkpointer,
 )
