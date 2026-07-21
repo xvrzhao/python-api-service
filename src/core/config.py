@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     LLM_CTX_WIN_THRESHOLD: float
     LLM_CTX_WIN_SUM_KEEP: float
     ALLOW_ORIGINS: list[str] = []
+    PG_HOST: str
+    PG_PORT: int
+    PG_DB: str
+    PG_USER: str
+    PG_PSW: SecretStr
+    PG_CONN_MAX: int
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -31,6 +37,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENV == Environment.PRODUCTION
+    
+    @property
+    def postgres_uri(self) -> str:
+        return f"postgresql://{self.PG_USER}:{self.PG_PSW.get_secret_value()}@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DB}?sslmode=disable"
     
 
 settings = Settings()

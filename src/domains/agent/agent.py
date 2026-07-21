@@ -8,7 +8,7 @@ from langgraph.types import Interrupt, Command
 
 from .schemas import ChatRequest, ResumeRequest
 from src.utils.sse import sse_event
-from src.core.agent.agent import agent
+from src.core.agent.agent import get_agent
 
 logger = getLogger(__name__)
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/agent")
 async def _agent_event_stream(input: Any, config: dict) -> AsyncIterator[str]:
     """公共的事件流处理逻辑, chat 和 resume 都会用到"""
     try:
-        events = agent.astream_events(input, config=config, version="v2")
+        events = get_agent().astream_events(input, config=config, version="v2")
         async for event in events:
             kind = event["event"]
             node = event.get("metadata", {}).get("langgraph_node", "")
@@ -41,7 +41,7 @@ async def _agent_event_stream(input: Any, config: dict) -> AsyncIterator[str]:
                 yield sse_event("tool_end", {"name": event["name"], "output": str(event["data"].get("output"))})
         
         # agent 执行完毕，判断是否有中断任务需要前端处理
-        state = await agent.aget_state(config=config)
+        state = await get_agent().aget_state(config=config)
         if len(state.interrupts) > 0:
             intrs = [_classify_interrupt(intr.value) for intr in state.interrupts]
             logger.debug("agent stream done, but has interrupts: %s", intrs)
