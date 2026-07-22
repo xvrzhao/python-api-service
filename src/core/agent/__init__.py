@@ -6,6 +6,7 @@ from langchain.agents.middleware import SummarizationMiddleware, HumanInTheLoopM
 from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langgraph.types import Checkpointer
 from psycopg_pool import AsyncConnectionPool
 
 from src.core.config import settings
@@ -15,33 +16,35 @@ import src.core.agent.middlewares.test as test_middlewares
 
 logger = getLogger(__name__)
 
-class Agent:
-    model: BaseChatModel = None
-    pool: AsyncConnectionPool = None
-    agent: CompiledStateGraph = None
+class AgentProvider:
 
-    @classmethod
-    async def init(cls):
-        cls.model = ChatDeepSeek(
+    def __init__(self):
+        self.model: BaseChatModel | None = None
+        self.pool: AsyncConnectionPool | None = None
+        self.checkpointer: Checkpointer | None = None
+        self.agent: CompiledStateGraph | None = None
+
+    async def init(self):
+        self.model = ChatDeepSeek(
             api_key=settings.LLM_API_KEY, 
             model=settings.LLM_MODEL,
             streaming=True,
             temperature=0.3,
         )
 
-        cls.pool = AsyncConnectionPool(
+        self.pool = AsyncConnectionPool(
             conninfo=settings.postgres_uri,
             max_size=settings.PG_CONN_MAX,
             kwargs={"autocommit": True}
         )
 
-        checkpointer = AsyncPostgresSaver(cls.pool)
-        await checkpointer.setup()
+        self.checkpointer = AsyncPostgresSaver(self.pool)
+        await self.checkpointer.setup()
 
         logger.info("agent init: postgres checkpointer steup complete")
 
-        cls.agent = create_agent(
-            model=cls.model,
+        self.agent = create_agent(
+            model=self.model,
             tools=[
                 weather_tools.get_weather,
             ], 
@@ -50,7 +53,7 @@ class Agent:
                 # test_middlewares.after_model_hook,
                 # test_middlewares.after_agent_hook,
                 SummarizationMiddleware(
-                    model=cls.model,
+                    model=self.model,
                     trigger=("tokens", settings.LLM_CTX_WIN * settings.LLM_CTX_WIN_THRESHOLD),
                     keep=("tokens", settings.LLM_CTX_WIN * settings.LLM_CTX_WIN_THRESHOLD * settings.LLM_CTX_WIN_SUM_KEEP)
                 ),
@@ -60,11 +63,13 @@ class Agent:
                     }
                 )
             ],
-            checkpointer=checkpointer,
+            checkpointer=self.checkpointer,
         )
 
-    @classmethod
-    async def shutdown(cls):
-        if cls.pool is not None:
-            await cls.pool.close()
+    async def shutdown(self):
+        if self.pool is not None:
+            await self.pool.close()
         logger.info("agent shutdown: postgres connection pool closed")
+
+
+agent_provider = AgentProvider()

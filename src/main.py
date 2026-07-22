@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.logging import setup_logging
 from src.core.config import settings
 from src.core.middlewares.trace import TraceMiddleware
-from src.core.agent import Agent
+from src.core.agent import agent_provider
+from src.core.redis import redis_provider
 from src.domains import router
 
 setup_logging()
@@ -16,9 +17,11 @@ logger.info("application environment variables: %s", settings.model_dump_json())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await Agent.init()
+    redis_provider.init()
+    await agent_provider.init()
     yield
-    await Agent.shutdown()
+    await redis_provider.shutdown()
+    await agent_provider.shutdown()
 
 app = FastAPI(
     title=settings.APP_NAME,
