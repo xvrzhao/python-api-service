@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.logging import setup_logging
 from src.core.config import settings
 from src.core.middlewares.trace import TraceMiddleware
-from src.core.agent import agent
+from src.core.agent import Agent
 from src.domains import router
 
 setup_logging()
@@ -16,9 +16,9 @@ logger.info("application environment variables: %s", settings.model_dump_json())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await agent.init()
+    await Agent.init()
     yield
-    await agent.shutdown()
+    await Agent.shutdown()
 
 app = FastAPI(
     title=settings.APP_NAME,
