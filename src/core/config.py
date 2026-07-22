@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     REDIS_PORT: int
     REDIS_PSW: str = ""
 
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_DAYS: int = 30
+    JWT_RENEW_DAYS: int = 1
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -48,6 +53,10 @@ class Settings(BaseSettings):
     @property
     def postgres_uri(self) -> str:
         return f"postgresql://{self.PG_USER}:{self.PG_PSW.get_secret_value()}@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DB}?sslmode=disable"
+
+    @property
+    def postgres_async_uri(self) -> str:
+        return f"postgresql+psycopg://{self.PG_USER}:{self.PG_PSW.get_secret_value()}@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DB}"
     
 
 settings = Settings()

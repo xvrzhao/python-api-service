@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import AsyncIterator, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from langchain.messages import HumanMessage
 from langgraph.types import Interrupt, Command
@@ -9,6 +9,7 @@ from langgraph.types import Interrupt, Command
 from .schemas import ChatRequest, ResumeRequest
 from src.utils.sse import sse_event
 from src.core.agent import agent_provider
+from src.domains.auth.dependencies import require_auth
 
 logger = getLogger(__name__)
 
@@ -63,7 +64,7 @@ def _classify_interrupt(value: dict) -> dict:
 
 
 @router.post("/chat/stream", summary="发送消息")
-async def chat_stream(req: ChatRequest):
+async def chat_stream(req: ChatRequest, payload: dict = Depends(require_auth)):
     config = {"configurable": {"thread_id": req.thread_id}}
     input = {"messages": [HumanMessage(content=req.message)]}
 
@@ -79,7 +80,7 @@ async def chat_stream(req: ChatRequest):
 
 
 @router.post("/chat/resume", summary="恢复中断的任务")
-async def chat_resume(req: ResumeRequest):
+async def chat_resume(req: ResumeRequest, payload: dict = Depends(require_auth)):
     config = {"configurable": {"thread_id": req.thread_id}}
     input = Command(resume=req.resume_value)
 
